@@ -80,6 +80,9 @@ class Args:
 
 
 def process_args(args: Args):
+    config = Config()
+    print(config.directory)
+
     match args.command:
         case Command.CONFIG:
             if args.directory:

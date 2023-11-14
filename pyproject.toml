@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "remove-bg"
+version = "0.0.1"
+description = "Automatically remove image backgrounds in seconds"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Vladyslav Haiduk", email = "the.vladhaiduk@gmail.com" }]
+dynamic = ["dependencies"]
+
+[project.scripts]
+rmbg = "rmbg_cli:main"
+
+[tool.setuptools]
+py-modules = ["rmbg_cli"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.in"] }
