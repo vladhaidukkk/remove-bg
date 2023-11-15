@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, TypedDict, cast
 
 import toml
+from rembg import remove  # type: ignore[import-untyped]
 
 
 class ConfigDict(TypedDict):
@@ -59,10 +60,6 @@ class Config:
     @property
     def results_directory(self) -> Path:
         return self.directory / "results"
-
-    @property
-    def masks_directory(self) -> Path:
-        return self.directory / "masks"
 
     def get_param(self, param: str) -> Any:
         assert param in Config.PARAMS, param
@@ -150,11 +147,16 @@ def process_args(args: Args, *, config: Config):
             config.directory.mkdir(parents=True, exist_ok=True)
             config.inputs_directory.mkdir(exist_ok=True)
             config.results_directory.mkdir(exist_ok=True)
-            config.masks_directory.mkdir(exist_ok=True)
         case Command.FOR:
             if args.image:
-                image_path = config.inputs_directory / args.image
-                print(image_path)
+                input_path = config.inputs_directory / args.image
+                result_path = config.results_directory / args.image
+
+                with input_path.open("rb") as input_file:
+                    with result_path.open("wb") as result_file:
+                        inp = input_file.read()
+                        res = remove(inp)
+                        result_file.write(res)
 
 
 def main():

@@ -2,3 +2,7 @@ pip-tools
 build
 twine
 types-toml
+flake8
+black
+mypy
+isort
