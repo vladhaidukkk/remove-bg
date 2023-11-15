@@ -22,12 +22,17 @@ class Config:
 
     @staticmethod
     def _get_config_path() -> Path:
-        config_home = os.getenv("XDG_CONFIG_HOME")
-        return (
-            Path(config_home) / "rmbg.toml"
-            if config_home
-            else Path.home() / ".rmbg.toml"
-        )
+        xdg_config_home = os.getenv("XDG_CONFIG_HOME")
+        config = xdg_config_home and Path(xdg_config_home) / "rmbg.toml"
+        home_config = Path.home() / ".rmbg.toml"
+
+        if config and config.exists():
+            return config
+        elif home_config and home_config.exists():
+            return home_config
+        elif config:
+            return config
+        return home_config
 
     @staticmethod
     def _parse_config(path: Path) -> ConfigDict:
@@ -42,7 +47,7 @@ class Config:
 
     @directory.setter
     def directory(self, value: Path):
-        self._config["directory"] = str(value)
+        self._config["directory"] = str(value.absolute())
         with self._config_path.open("w") as f:
             toml.dump(self._config, f)
 
@@ -81,12 +86,11 @@ class Args:
 
 def process_args(args: Args):
     config = Config()
-    print(config.directory)
 
     match args.command:
         case Command.CONFIG:
             if args.directory:
-                pass
+                config.directory = args.directory
 
 
 def main():
