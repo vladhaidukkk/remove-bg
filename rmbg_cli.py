@@ -2,7 +2,7 @@ import argparse
 import os
 from enum import Enum
 from pathlib import Path
-from typing import TypedDict, cast
+from typing import Any, TypedDict, cast
 
 import toml
 
@@ -12,6 +12,7 @@ class ConfigDict(TypedDict):
 
 
 class Config:
+    PARAMS = tuple(ConfigDict.__annotations__)
     DEFAULT_DIRECTORY = Path.home() / "remove-bg"
 
     def __init__(self) -> None:
@@ -63,6 +64,10 @@ class Config:
     def masks_directory(self) -> Path:
         return self.directory / "masks"
 
+    def get_param(self, param: str) -> Any:
+        assert param in Config.PARAMS, param
+        return getattr(self, param)
+
 
 class Command(Enum):
     CONFIG = "config"
@@ -77,8 +82,6 @@ def create_parser(*, config: Config):
     )
     subparsers = parser.add_subparsers(title="Commands", dest="command")
 
-    # todo: create -g, --get option to show current config value for an option
-    # + add choices
     config_cmd = subparsers.add_parser(
         Command.CONFIG.value,
         help="change configuration",
@@ -89,6 +92,12 @@ def create_parser(*, config: Config):
         "--directory",
         type=Path,
         help=f"path to a directory with images (default: {config.DEFAULT_DIRECTORY})",
+    )
+    config_cmd.add_argument(
+        "-g",
+        "--get",
+        help="get value of a configuration parameter",
+        choices=config.PARAMS,
     )
 
     subparsers.add_parser(
@@ -120,10 +129,12 @@ class Args:
         self,
         command: str | None,
         directory: Path | None = None,
+        get: str | None = None,
         image: str | None = None,
     ) -> None:
         self.command = command and Command(command)
         self.directory = directory
+        self.get = get
         self.image = image
 
 
@@ -132,6 +143,9 @@ def process_args(args: Args, *, config: Config):
         case Command.CONFIG:
             if args.directory:
                 config.directory = args.directory
+            elif args.get:
+                value = config.get_param(args.get)
+                print(f"{args.get} = {value}")
         case Command.INIT:
             config.directory.mkdir(parents=True, exist_ok=True)
             config.inputs_directory.mkdir(exist_ok=True)
