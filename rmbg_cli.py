@@ -89,12 +89,14 @@ def create_parser(*, config: Config):
         "--directory",
         type=Path,
         help=f"path to a directory with images (default: {config.DEFAULT_DIRECTORY})",
+        dest="config_directory",
     )
     config_cmd.add_argument(
         "-g",
         "--get",
         help="get value of a configuration parameter",
         choices=config.PARAMS,
+        dest="config_get",
     )
 
     subparsers.add_parser(
@@ -110,12 +112,20 @@ def create_parser(*, config: Config):
         description="Remove background for an image",
     )
     for_cmd.add_argument(
-        "image",
+        "for_image",
+        help="image to be processed",
+        metavar="image",
+    )
+    for_cmd.add_argument(
+        "-d",
+        "--directory",
+        action="store_true",
         help=(
-            f"name of the image inside the {config.inputs_directory} directory to be "
-            "processed (p.s. you can change the directory using the `config` command "
-            "with the `--directory` option)"
+            f"process an image from the {config.inputs_directory} directory, which can "
+            "be changed using the `config` command with the `--directory` option "
+            "(default: false)"
         ),
+        dest="for_directory",
     )
 
     return parser
@@ -125,32 +135,39 @@ class Args:
     def __init__(
         self,
         command: str | None,
-        directory: Path | None = None,
-        get: str | None = None,
-        image: str | None = None,
+        config_directory: Path | None = None,
+        config_get: str | None = None,
+        for_image: str | None = None,
+        for_directory: bool | None = None,
     ) -> None:
         self.command = command and Command(command)
-        self.directory = directory
-        self.get = get
-        self.image = image
+        self.config_directory = config_directory
+        self.config_get = config_get
+        self.for_image = for_image
+        self.for_directory = for_directory
 
 
 def process_args(args: Args, *, config: Config):
     match args.command:
         case Command.CONFIG:
-            if args.directory:
-                config.directory = args.directory
-            elif args.get:
-                value = config.get_param(args.get)
-                print(f"{args.get} = {value}")
+            if args.config_directory:
+                config.directory = args.config_directory
+            elif args.config_get:
+                value = config.get_param(args.config_get)
+                print(f"{args.config_get} = {value}")
         case Command.INIT:
             config.directory.mkdir(parents=True, exist_ok=True)
             config.inputs_directory.mkdir(exist_ok=True)
             config.results_directory.mkdir(exist_ok=True)
         case Command.FOR:
-            if args.image:
-                input_path = config.inputs_directory / args.image
-                result_path = config.results_directory / args.image
+            if args.for_image:
+                if args.for_directory:
+                    input_path = config.inputs_directory / args.for_image
+                    result_path = config.results_directory / args.for_image
+                else:
+                    input_path = Path(args.for_image)
+                    image_name, image_ext = args.for_image.rsplit(".", 1)
+                    result_path = Path(f"{image_name}-nobg.{image_ext}")
 
                 with input_path.open("rb") as input_file:
                     with result_path.open("wb") as result_file:
