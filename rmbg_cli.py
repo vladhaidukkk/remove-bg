@@ -66,6 +66,7 @@ class Config:
 
 class Command(Enum):
     CONFIG = "config"
+    INIT = "init"
     FOR = "for"
 
 
@@ -76,6 +77,8 @@ def create_parser(*, config: Config):
     )
     subparsers = parser.add_subparsers(title="Commands", dest="command")
 
+    # todo: create -g, --get option to show current config value for an option
+    # + add choices
     config_cmd = subparsers.add_parser(
         Command.CONFIG.value,
         help="change configuration",
@@ -86,6 +89,13 @@ def create_parser(*, config: Config):
         "--directory",
         type=Path,
         help=f"path to a directory with images (default: {config.DEFAULT_DIRECTORY})",
+    )
+
+    subparsers.add_parser(
+        Command.INIT.value,
+        help="create the directory based on your configuration",
+        description="Create the directory based on your configuration",
+        epilog=f"According to your configuration it will create {config.directory}",
     )
 
     for_cmd = subparsers.add_parser(
@@ -122,6 +132,11 @@ def process_args(args: Args, *, config: Config):
         case Command.CONFIG:
             if args.directory:
                 config.directory = args.directory
+        case Command.INIT:
+            config.directory.mkdir(parents=True, exist_ok=True)
+            config.inputs_directory.mkdir(exist_ok=True)
+            config.results_directory.mkdir(exist_ok=True)
+            config.masks_directory.mkdir(exist_ok=True)
         case Command.FOR:
             if args.image:
                 image_path = config.inputs_directory / args.image
