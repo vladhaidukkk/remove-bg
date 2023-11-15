@@ -180,7 +180,11 @@ def main():
     config = Config()
     parser = create_parser(config=config)
     args = Args(**vars(parser.parse_args()))
-    process_args(args, config=config)
+
+    try:
+        process_args(args, config=config)
+    except Exception as err:
+        parser.error(err)
 
 
 if __name__ == "__main__":
