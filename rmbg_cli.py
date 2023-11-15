@@ -51,52 +51,88 @@ class Config:
         with self._config_path.open("w") as f:
             toml.dump(self._config, f)
 
+    @property
+    def inputs_directory(self) -> Path:
+        return self.directory / "inputs"
+
+    @property
+    def results_directory(self) -> Path:
+        return self.directory / "results"
+
+    @property
+    def masks_directory(self) -> Path:
+        return self.directory / "masks"
+
 
 class Command(Enum):
     CONFIG = "config"
+    FOR = "for"
 
 
-def create_parser():
+def create_parser(*, config: Config):
     parser = argparse.ArgumentParser(
         prog="rmbg",
         description="Automatically remove image backgrounds in seconds",
     )
     subparsers = parser.add_subparsers(title="Commands", dest="command")
 
-    config = subparsers.add_parser(
+    config_cmd = subparsers.add_parser(
         Command.CONFIG.value,
         help="change configuration",
         description="Change configuration",
     )
-    config.add_argument(
+    config_cmd.add_argument(
         "-d",
         "--directory",
         type=Path,
-        help=f"path to a directory with images (default: {Config.DEFAULT_DIRECTORY})",
+        help=f"path to a directory with images (default: {config.DEFAULT_DIRECTORY})",
+    )
+
+    for_cmd = subparsers.add_parser(
+        Command.FOR.value,
+        help="remove background for an image",
+        description="Remove background for an image",
+    )
+    for_cmd.add_argument(
+        "image",
+        help=(
+            f"name of the image inside the {config.inputs_directory} directory to be "
+            "processed (p.s. you can change the directory using the `config` command "
+            "with the `--directory` option)"
+        ),
     )
 
     return parser
 
 
 class Args:
-    def __init__(self, command: str | None, directory: Path | None = None) -> None:
+    def __init__(
+        self,
+        command: str | None,
+        directory: Path | None = None,
+        image: str | None = None,
+    ) -> None:
         self.command = command and Command(command)
         self.directory = directory
+        self.image = image
 
 
-def process_args(args: Args):
-    config = Config()
-
+def process_args(args: Args, *, config: Config):
     match args.command:
         case Command.CONFIG:
             if args.directory:
                 config.directory = args.directory
+        case Command.FOR:
+            if args.image:
+                image_path = config.inputs_directory / args.image
+                print(image_path)
 
 
 def main():
-    parser = create_parser()
+    config = Config()
+    parser = create_parser(config=config)
     args = Args(**vars(parser.parse_args()))
-    process_args(args)
+    process_args(args, config=config)
 
 
 if __name__ == "__main__":
