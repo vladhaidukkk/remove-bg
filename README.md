@@ -2,6 +2,8 @@
 
 The Remove Bg CLI tool is a powerful and efficient command-line utility designed to remove backgrounds from images seamlessly. It streamlines the process of isolating foreground objects by eliminating the background, providing users with clean, transparent images.
 
+_It's based on [Rembg](https://github.com/danielgatis/rembg) open-source package._
+
 ## Installation
 
 To install Remove Bg CLI, you will need to have Python and pip installed on your
